@@ -167,14 +167,17 @@ score_locations <- function(x, zones) {
   
   if (nrow(z_scores) != length(zones)) stop("zones don't match x")
   
+  key_matrix <- matrix(rep(0, length(zones) * x$n_locations), ncol = length(zones))
   for (i in seq_along(zones)) {
-    for (location in zones[[i]]) {
-      res[location, ]$score <- res[location, ]$score + z_scores$score[i]
-      res[location, ]$n_zones <- res[location, ]$n_zones + 1
-    }
+      key_matrix[zones[[i]], i] <- 1
   }
-  res$score <- res$score / (x$n_zones * x$max_duration)
+  b <- as.matrix(z_scores$score)
+  ones <- b * 0 + 1
+  
+  res$n_zones <- key_matrix %*% ones 
+  res$score <- (key_matrix %*% b) / (x$n_zones * x$max_duration)
   res$relative_score <- res$score / max(res$score)
+  res[2:4] <- lapply(res[2:4], as.numeric) 
   return(res)
 }
 
