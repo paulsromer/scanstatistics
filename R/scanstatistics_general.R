@@ -192,26 +192,18 @@ score_locations <- function(x, zones) {
 #' @param k An integer, the number of clusters to return.
 #' @param overlapping Logical; should the top clusters be allowed to overlap in
 #'    the spatial dimension? The default is \code{FALSE}.
-#' @param gumbel Logical; should a Gumbel P-value be calculated? The default is 
-#'    \code{FALSE}.
-#' @param alpha A significance level, which if not \code{NULL} will be used to
-#'    calculate a critical value for the statistics in the table.
-#' @param ... Parameters passed to \code{\link[stats]{quantile}}.
-#' @return A data frame with at most \eqn{k} rows, with columns 
-#'    \code{zone, duration, score} and possibly \code{MC_pvalue, Gumbel_pvalue}
-#'    and \code{critical_value}. 
+#' @return A \code{tibble} with at most \eqn{k} rows, with columns 
+#'    \code{zone, duration, score}. 
 #' @export
 #' @examples 
 #' \dontrun{
 #' set.seed(1)
 #' counts <- matrix(rpois(15, 3), 3, 5)
 #' zones <- list(1:2, 1:3, 2:5, c(1, 3), 4:5, c(1, 5))
-#' scanres <- scan_permutation(counts, zones, n_mcsim = 5)
+#' scanres <- scan_permutation(counts, zones)
 #' top_clusters(scanres, zones, k = 4, overlapping = FALSE)
 #' }
-top_clusters <- function(x, zones, k = 5, overlapping = FALSE, gumbel = FALSE,
-                         alpha = NULL, ...) {
-  k <- min(k, nrow(x$observed))
+top_clusters <- function(x, zones, k = 5, overlapping = FALSE) {
   if (overlapping) {
     return(x$observed[seq_len(k), ])
   } else {
@@ -230,18 +222,9 @@ top_clusters <- function(x, zones, k = 5, overlapping = FALSE, gumbel = FALSE,
       i <- i + 1L
     }
     res <- x$observed[row_idx[row_idx > 0], ]
-    
-    if (nrow(x$replicates) > 0) {
-      res$MC_pvalue <- mc_pvalue(res$score, x$replicates$score)
-      
-      if (gumbel) {
-        res$Gumbel_pvalue <- gumbel_pvalue(res$score, 
-                                           x$replicates$score)$pvalue
-      }
-      if (!is.null(alpha) && alpha >= 0 && alpha <= 1) {
-        res$critical_value <- quantile(x$replicates$score, 1 - alpha)
-      }
-    }
+    res$MC_pvalue <- mc_pvalue(res$score, x$replicates$score)
+    res$Gumbel_pvalue <- gumbel_pvalue(res$score, 
+                                       x$replicates$score)$pvalue
     return(res)
   }
 }
